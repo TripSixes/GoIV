@@ -156,6 +156,8 @@ public class Pokefly extends Service {
 
     private PokeInfoCalculator pokeInfoCalculator;
 
+    private AutoAppraisal autoAppraisal;
+
     //results pokemon picker auto complete
     @BindView(R.id.autoCompleteTextView1)
     AutoCompleteTextView autoCompleteTextView1;
@@ -446,6 +448,8 @@ public class Pokefly extends Service {
             if (!batterySaver) {
                 screen = ScreenGrabber.getInstance();
                 watchScreen();
+                autoAppraisal = new AutoAppraisal(screen, ocr, this, attCheckbox, defCheckbox, staCheckbox,
+                        appraisalPercentageRange, appraisalIvRange);
             } else {
                 screenShotHelper = ScreenShotHelper.start(Pokefly.this);
             }
@@ -508,6 +512,10 @@ public class Pokefly extends Service {
                     screenScanHandler.removeCallbacks(screenScanRunnable);
                     screenScanHandler.postDelayed(screenScanRunnable, SCREEN_SCAN_DELAY_MS);
                     screenScanRetries = SCREEN_SCAN_RETRIES;
+
+                    if (!batterySaver && appraisalBox.getVisibility() == View.VISIBLE) {
+                        autoAppraisal.screenTouched();
+                    }
                 }
                 return false;
             }
@@ -1281,10 +1289,10 @@ public class Pokefly extends Service {
      * @param ivScanResult the scan result to refine
      */
     private void refineByAvailableAppraisalInfo(IVScanResult ivScanResult) {
+
         if (attCheckbox.isChecked() || defCheckbox.isChecked() || staCheckbox.isChecked()) {
             ivScanResult.refineByHighest(attCheckbox.isChecked(), defCheckbox.isChecked(), staCheckbox.isChecked());
         }
-
         if (appraisalPercentageRange.getSelectedItemPosition() != 0) {
             ivScanResult.refineByAppraisalPercentageRange(appraisalPercentageRange.getSelectedItemPosition());
         }
@@ -1695,6 +1703,7 @@ public class Pokefly extends Service {
         resetPokeflyStateMachine();
         resetInfoDialogue();
         if (!batterySaver) {
+            autoAppraisal.reset();
             setIVButtonDisplay(true);
         }
     }
@@ -1734,6 +1743,9 @@ public class Pokefly extends Service {
         extendedEvolutionSpinner.setSelection(-1);
         resultsBox.setVisibility(View.GONE);
         allPossibilitiesBox.setVisibility(View.GONE);
+        if (appraisalBox.getVisibility() == View.VISIBLE) {
+            toggleAppraisalBox();
+        }
     }
 
     /**
@@ -1855,7 +1867,7 @@ public class Pokefly extends Service {
         ocr = OcrHelper.init(extdir, displayMetrics.widthPixels, displayMetrics.heightPixels,
                 pokeInfoCalculator.get(28).name,
                 pokeInfoCalculator.get(31).name,
-                settings.isPokeSpamEnabled());
+                settings);
     }
 
 
