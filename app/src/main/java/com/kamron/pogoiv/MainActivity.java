@@ -146,7 +146,8 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_DENIED) {
+                == PackageManager.PERMISSION_DENIED
+                && batterySaver) {
             return false;
         }
         return true;
